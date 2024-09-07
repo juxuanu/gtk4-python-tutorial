@@ -1,14 +1,41 @@
 import sys
 
 import gi
-from gi.repository import Gtk, Adw
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
+from gi.repository import Gtk, Adw, Gdk, GLib, Gio  # noqa: E402
+
+css_provider = Gtk.CssProvider()
+css_provider.load_from_path("style.css")
+Gtk.StyleContext.add_provider_for_display(
+    Gdk.Display.get_default(), css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+)
+
 
 class MainWindow(Gtk.ApplicationWindow):
-    def on_check_toggled(self, check):
+    def show_open_dialog(self, button):
+        f = Gtk.FileFilter()
+        f.set_name("Image files")
+        f.add_mime_type("image/png")
+        f.add_mime_type("image/jpeg")
+        filters = Gio.ListStore.new(Gtk.FileFilter)
+        filters.append(f)
+        self.open_dialog.set_filters(filters)
+        self.open_dialog.set_default_filter(f)
+        self.open_dialog.open(self, None, self.open_dialog_callback)
+
+    def open_dialog_callback(self, dialog: Gtk.FileDialog, result):
+        try:
+            file = dialog.open_finish(result)
+            if file is not None:
+                print(f"File path is {file.get_path()}")
+                # ...
+        except GLib.Error as error:
+            print(f"Error opening the file: {error.message}")
+
+    def on_check_toggled(self, check: Gtk.CheckButton):
         if check.get_active():
             self.button.set_label("Goodbye!")
         else:
@@ -17,10 +44,21 @@ class MainWindow(Gtk.ApplicationWindow):
     def on_switch_state_set(self, switch, state):
         print(f"The switch state is {state} ({'on' if state else 'off'})")
 
+    def on_slider_value_changed(self, slider):
+        print(f"The slider value is {slider.get_value()}")
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.set_default_size(600, 250)
         self.set_title("MyApp")
+        self.header = Gtk.HeaderBar()
+        self.set_titlebar(self.header)
+        self.open_file_button = Gtk.Button(
+            tooltip_text="Open",
+            icon_name="document-open-symbolic",
+        )
+        self.open_file_button.connect("clicked", self.show_open_dialog)
+        self.header.pack_start(self.open_file_button)
 
         self.main_box = Gtk.Box(
             margin_top=10,
@@ -36,9 +74,16 @@ class MainWindow(Gtk.ApplicationWindow):
         self.switch_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         self.switch = Gtk.Switch(active=True)
         self.switch_label = Gtk.Label(label="A switch")
+        self.slider = Gtk.Scale(digits=0, draw_value=True)
+        self.slider.set_range(0, 10)
+        self.slider.set_value(5)
+
+        self.open_dialog = Gtk.FileDialog.new()
+        self.open_dialog.set_title("Select a file")
 
         self.switch.connect("state-set", self.on_switch_state_set)
         self.check.connect("toggled", self.on_check_toggled)
+        self.slider.connect("value-changed", self.on_slider_value_changed)
 
         self.set_child(self.main_box)
         self.main_box.append(self.left_box)
@@ -46,6 +91,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.left_box.append(self.button)
         self.left_box.append(self.check)
         self.left_box.append(self.switch_box)
+        self.left_box.append(self.slider)
         self.switch_box.append(self.switch)
         self.switch_box.append(self.switch_label)
 
