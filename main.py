@@ -62,16 +62,19 @@ class MainWindow(Gtk.ApplicationWindow):
             icon_name="document-open-symbolic",
         )
         self.open_file_button.connect("clicked", self.show_open_dialog)
-        self.about = Gtk.AboutDialog(
+        self.about = Adw.AboutWindow(
             transient_for=self,
-            modal=True,
-            authors=["Ícar Nin Solana"],
-            copyright="Copyright 2024 Ícar Nin Solana",
+            application_name="My App",
+            version="0.0.1",
+            developer_name="Ícar Nin Solana",
             license_type=Gtk.License.GPL_3_0,
+            comments="Just an example, move along",
             website="https://icarns.xyz",
-            website_label="ICARNS.XYZ",
-            version="1.0",
-            logo_icon_name="org.example.example",
+            issue_url="https://lmao.com",
+            translator_credits="None",
+            copyright="© 2024 Ícar Nin Solana",
+            developers=["Ícar Nin Solana"],
+            application_icon="org.example.example",
         )
         self.popover = Gtk.PopoverMenu()
 
