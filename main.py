@@ -47,10 +47,14 @@ class MainWindow(Gtk.ApplicationWindow):
     def on_slider_value_changed(self, slider):
         print(f"The slider value is {slider.get_value()}")
 
+    def show_about(self, action, param):
+        self.about.set_visible(True)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.set_default_size(600, 250)
         self.set_title("MyApp")
+        GLib.set_application_name("My App")
         self.header = Gtk.HeaderBar()
         self.set_titlebar(self.header)
         self.open_file_button = Gtk.Button(
@@ -58,7 +62,38 @@ class MainWindow(Gtk.ApplicationWindow):
             icon_name="document-open-symbolic",
         )
         self.open_file_button.connect("clicked", self.show_open_dialog)
+        self.about = Gtk.AboutDialog(
+            transient_for=self,
+            modal=True,
+            authors=["Ícar Nin Solana"],
+            copyright="Copyright 2024 Ícar Nin Solana",
+            license_type=Gtk.License.GPL_3_0,
+            website="https://icarns.xyz",
+            website_label="ICARNS.XYZ",
+            version="1.0",
+            logo_icon_name="org.example.example",
+        )
+        self.popover = Gtk.PopoverMenu()
+
+        action_something = Gio.SimpleAction.new("something", None)
+        action_something.connect(
+            "activate", lambda signal, param: print("Something happened")
+        )
+        self.add_action(action_something)
+        action_about = Gio.SimpleAction.new("about", None)
+        action_about.connect("activate", self.show_about)
+        self.add_action(action_about)
+
+        menu = Gio.Menu.new()
+        menu.append("Do something", "win.something")
+        menu.append("About", "win.about")
+        self.popover.set_menu_model(menu)
+        self.hamburger = Gtk.MenuButton()
+        self.hamburger.set_popover(self.popover)
+        self.hamburger.set_icon_name("open-menu-symbolic")
+
         self.header.pack_start(self.open_file_button)
+        self.header.pack_end(self.hamburger)
 
         self.main_box = Gtk.Box(
             margin_top=10,
@@ -77,7 +112,6 @@ class MainWindow(Gtk.ApplicationWindow):
         self.slider = Gtk.Scale(digits=0, draw_value=True)
         self.slider.set_range(0, 10)
         self.slider.set_value(5)
-
         self.open_dialog = Gtk.FileDialog.new()
         self.open_dialog.set_title("Select a file")
 
