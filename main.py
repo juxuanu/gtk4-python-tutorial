@@ -1,3 +1,4 @@
+import os
 import sys
 
 import gi
@@ -6,6 +7,8 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
 from gi.repository import Gtk, Adw, Gdk, GLib, Gio  # noqa: E402
+
+from gridmodel import File
 
 css_provider = Gtk.CssProvider()
 css_provider.load_from_path("style.css")
@@ -59,7 +62,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.set_titlebar(self.header)
         self.open_file_button = Gtk.Button(
             tooltip_text="Open",
-            icon_name="document-open-symbolic",
+            icon_name="org.example.example-symbolic",
         )
         self.open_file_button.connect("clicked", self.show_open_dialog)
         self.about = Adw.AboutWindow(
@@ -117,6 +120,22 @@ class MainWindow(Gtk.ApplicationWindow):
         self.slider.set_value(5)
         self.open_dialog = Gtk.FileDialog.new()
         self.open_dialog.set_title("Select a file")
+        self.grid = Gtk.GridView()
+        self.list_store = Gio.ListStore()
+        for f in os.listdir("."):
+            print(f, type(f))
+            self.list_store.append(File(f))
+        self.grid.set_model(Gtk.SingleSelection(model=self.list_store))
+        factory = Gtk.SignalListItemFactory()
+        factory.connect(
+            "setup",
+            lambda _, item: item.set_child(
+                Gtk.Label(halign=Gtk.Align.START, selectable=False)
+            ),
+        )
+        factory.connect(
+            "bind", lambda _, item: item.get_child().set_label(item.get_item().name)
+        )
 
         self.switch.connect("state-set", self.on_switch_state_set)
         self.check.connect("toggled", self.on_check_toggled)
@@ -131,6 +150,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.left_box.append(self.slider)
         self.switch_box.append(self.switch)
         self.switch_box.append(self.switch_label)
+        self.right_box.append(self.grid)
 
 
 class MyApp(Adw.Application):
